@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz — FonoAR</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <style>
+    .quiz-pagina {
+      padding-top: 60px;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 0%, rgba(44,110,158,0.12) 0%, transparent 60%);
+    }
+
+    .quiz-header {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+
+    .quiz-header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .quiz-header p {
+      color: var(--cor-texto-suave);
+      font-size: 0.95rem;
+    }
+
+    /* Tela de início */
+    #tela-inicio {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .quiz-intro-card {
+      background: var(--cor-fundo-card);
+      border: 1px solid rgba(74,158,222,0.2);
+      border-radius: var(--raio);
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .quiz-intro-icone {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .quiz-intro-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin: 1.5rem 0;
+    }
+
+    .quiz-stat {
+      text-align: center;
+    }
+
+    .quiz-stat-numero {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--cor-acento);
+      display: block;
+    }
+
+    .quiz-stat-label {
+      font-size: 0.75rem;
+      color: var(--cor-texto-suave);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Tela do quiz */
+    #tela-quiz {
+      display: none;
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* Tela de resultado */
+    #tela-resultado {
+      display: none;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .resultado-card {
+      background: var(--cor-fundo-card);
+      border: 1px solid rgba(74,158,222,0.2);
+      border-radius: var(--raio);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .resultado-estrelas {
+      font-size: 2rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+    }
+
+    .resultado-acoes {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    /* Animação de entrada da pergunta */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .quiz-pergunta-wrapper {
+      animation: slideIn 0.25s ease;
+    }
+
+    /* Indicador de tempo (decorativo) */
+    .quiz-timer-bar {
+      height: 3px;
+      background: rgba(74,158,222,0.2);
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .quiz-timer-fill {
+      height: 100%;
+      background: var(--cor-secundaria);
+      border-radius: 2px;
+      width: 100%;
+      transition: width 0.5s linear;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-bar">
+  <a href="index.html" class="nav-logo">🫁 Fono<span class="acento">AR</span></a>
+  <div class="nav-links">
+    <a href="estudo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Estudo</span>
+    </a>
+    <a href="ar.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
+      <span>AR</span>
+    </a>
+    <a href="quiz.html" class="nav-btn ativo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Quiz</span>
+    </a>
+  </div>
+</nav>
+
+<main class="quiz-pagina">
+
+  <!-- Tela de início -->
+  <div id="tela-inicio">
+    <div class="quiz-header">
+      <h1>🧠 Quiz <span style="color:var(--cor-acento)">Anatômico</span></h1>
+      <p>Teste seus conhecimentos sobre o trato vocal</p>
+    </div>
+
+    <div class="quiz-intro-card">
+      <div class="quiz-intro-icone">🎯</div>
+      <h2 style="font-size:1.1rem; margin-bottom:0.5rem">Como funciona</h2>
+      <p style="color:var(--cor-texto-suave); font-size:0.9rem; line-height:1.6">
+        Você verá 5 perguntas sobre estruturas anatômicas do trato vocal.
+        Para cada pergunta, escolha a estrutura correta entre quatro opções.
+        No final, você verá sua pontuação e poderá revisar os erros.
+      </p>
+      <div class="quiz-intro-stats">
+        <div class="quiz-stat">
+          <span class="quiz-stat-numero">5</span>
+          <span class="quiz-stat-label">Perguntas</span>
+        </div>
+        <div class="quiz-stat">
+          <span class="quiz-stat-numero">6</span>
+          <span class="quiz-stat-label">Estruturas</span>
+        </div>
+        <div class="quiz-stat">
+          <span class="quiz-stat-numero">∞</span>
+          <span class="quiz-stat-label">Tentativas</span>
+        </div>
+      </div>
+      <button id="btn-comecar" class="btn btn-acento" style="font-size:1rem; padding:0.85rem 2.5rem">
+        Começar Quiz →
+      </button>
+    </div>
+
+    <div style="text-align:center">
+      <a href="estudo.html" class="btn btn-secundario" style="font-size:0.85rem">
+        📚 Estudar antes de começar
+      </a>
+    </div>
+  </div>
+
+  <!-- Tela do quiz -->
+  <div id="tela-quiz">
+    <!-- Barra de progresso -->
+    <div id="progresso-barra" class="quiz-progresso"></div>
+
+    <div class="quiz-pergunta-wrapper" id="pergunta-wrapper">
+      <div class="quiz-timer-bar">
+        <div class="quiz-timer-fill" id="timer-fill"></div>
+      </div>
+
+      <div class="quiz-numero" id="quiz-numero">Pergunta 1 de 5</div>
+      <div class="quiz-pergunta" id="quiz-pergunta">—</div>
+
+      <div class="quiz-opcoes" id="quiz-opcoes"></div>
+
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+
+      <div style="margin-top: 1.5rem; text-align: right">
+        <button id="btn-proxima" class="btn btn-primario" style="display:none">
+          Próxima →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tela de resultado -->
+  <div id="tela-resultado">
+    <div class="resultado-card">
+      <div class="resultado-estrelas" id="resultado-estrelas">⭐⭐⭐</div>
+      <div class="quiz-pontuacao" id="pontuacao-numero">0/5</div>
+      <div class="quiz-pontuacao-label">acertos</div>
+      <div class="quiz-mensagem" id="resultado-mensagem"></div>
+
+      <div class="resultado-acoes">
+        <button id="btn-reiniciar" class="btn btn-acento">
+          🔄 Tentar novamente
+        </button>
+        <a href="estudo.html" class="btn btn-secundario">
+          📚 Revisar no Atlas
+        </a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="scripts/interactions.js"></script>
+<script>
+  let dadosQuiz = [];
+  let dadosEstruturas = [];
+  let perguntaAtual = 0;
+  let pontuacao = 0;
+  let respondida = false;
+
+  function embaralhar(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function nomeEstrutura(id) {
+    const est = dadosEstruturas.find(e => e.id === id);
+    return est ? est.nome : id;
+  }
+
+  function descricaoEstrutura(id) {
+    const est = dadosEstruturas.find(e => e.id === id);
+    return est ? est.descricao : '';
+  }
+
+  function estrelas(pct) {
+    if (pct === 100) return '⭐⭐⭐⭐⭐';
+    if (pct >= 80)  return '⭐⭐⭐⭐';
+    if (pct >= 60)  return '⭐⭐⭐';
+    if (pct >= 40)  return '⭐⭐';
+    return '⭐';
+  }
+
+  function renderizarProgresso() {
+    const barra = document.getElementById('progresso-barra');
+    barra.innerHTML = '';
+    dadosQuiz.forEach((_, i) => {
+      const item = document.createElement('div');
+      item.className = 'quiz-progresso-item';
+      if (i < perguntaAtual) item.classList.add('completo');
+      else if (i === perguntaAtual) item.classList.add('atual');
+      barra.appendChild(item);
+    });
+  }
+
+  function renderizarPergunta() {
+    const q = dadosQuiz[perguntaAtual];
+    respondida = false;
+
+    // Animação de entrada
+    const wrapper = document.getElementById('pergunta-wrapper');
+    wrapper.style.animation = 'none';
+    wrapper.offsetHeight; // reflow
+    wrapper.style.animation = '';
+
+    document.getElementById('quiz-numero').textContent =
+      `Pergunta ${perguntaAtual + 1} de ${dadosQuiz.length}`;
+    document.getElementById('quiz-pergunta').textContent = q.pergunta;
+
+    const feedback = document.getElementById('quiz-feedback');
+    feedback.className = 'quiz-feedback';
+    feedback.textContent = '';
+    document.getElementById('btn-proxima').style.display = 'none';
+
+    // Timer decorativo
+    const timerFill = document.getElementById('timer-fill');
+    timerFill.style.transition = 'none';
+    timerFill.style.width = '100%';
+    setTimeout(() => {
+      timerFill.style.transition = 'width 30s linear';
+      timerFill.style.width = '0%';
+    }, 50);
+
+    const opcoesEl = document.getElementById('quiz-opcoes');
+    opcoesEl.innerHTML = '';
+    embaralhar([...q.opcoes]).forEach(opcaoId => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-opcao';
+      btn.textContent = nomeEstrutura(opcaoId);
+      btn.dataset.id = opcaoId;
+      btn.addEventListener('click', () => responder(opcaoId, q));
+      opcoesEl.appendChild(btn);
+    });
+
+    renderizarProgresso();
+  }
+
+  function responder(opcaoId, q) {
+    if (respondida) return;
+    respondida = true;
+
+    // Para o timer
+    const timerFill = document.getElementById('timer-fill');
+    const computedWidth = getComputedStyle(timerFill).width;
+    timerFill.style.transition = 'none';
+    timerFill.style.width = computedWidth;
+
+    const correta = opcaoId === q.resposta;
+    const feedback = document.getElementById('quiz-feedback');
+
+    document.querySelectorAll('.quiz-opcao').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.id === q.resposta) btn.classList.add('correta');
+      if (btn.dataset.id === opcaoId && !correta) btn.classList.add('errada');
+    });
+
+    if (correta) {
+      pontuacao++;
+      feedback.className = 'quiz-feedback correta';
+      feedback.innerHTML = `<strong>✓ Correto!</strong> ${descricaoEstrutura(q.resposta)}`;
+    } else {
+      feedback.className = 'quiz-feedback errada';
+      feedback.innerHTML = `<strong>✗ Incorreto.</strong> A resposta certa era: <strong>${nomeEstrutura(q.resposta)}</strong>. ${descricaoEstrutura(q.resposta)}`;
+    }
+
+    document.getElementById('btn-proxima').style.display = 'inline-flex';
+  }
+
+  function proximaPergunta() {
+    perguntaAtual++;
+    if (perguntaAtual >= dadosQuiz.length) {
+      mostrarResultado();
+    } else {
+      renderizarPergunta();
+    }
+  }
+
+  function mostrarResultado() {
+    document.getElementById('tela-quiz').style.display = 'none';
+    const resultado = document.getElementById('tela-resultado');
+    resultado.style.display = 'block';
+
+    const pct = Math.round((pontuacao / dadosQuiz.length) * 100);
+    document.getElementById('pontuacao-numero').textContent = `${pontuacao}/${dadosQuiz.length}`;
+    document.getElementById('resultado-estrelas').textContent = estrelas(pct);
+
+    const msgs = {
+      100: 'Perfeito! Domínio completo da anatomia fonoaudiológica!',
+      80:  'Excelente! Você conhece muito bem o trato vocal.',
+      60:  'Bom resultado! Revise as estruturas e tente novamente.',
+      40:  'Continue estudando! Use o Atlas para revisar.',
+      0:   'Não desista! Explore o Modo Estudo antes de tentar de novo.'
+    };
+
+    const limiar = [100, 80, 60, 40, 0].find(l => pct >= l);
+    const msgEl = document.getElementById('resultado-mensagem');
+    msgEl.textContent = msgs[limiar];
+  }
+
+  function reiniciarQuiz() {
+    perguntaAtual = 0;
+    pontuacao = 0;
+    dadosQuiz = embaralhar(dadosQuiz);
+    document.getElementById('tela-resultado').style.display = 'none';
+    document.getElementById('tela-quiz').style.display = 'block';
+    renderizarPergunta();
+  }
+
+  async function iniciar() {
+    const resp = await fetch('data/estruturas.json');
+    const json = await resp.json();
+    dadosEstruturas = json.estruturas;
+    dadosQuiz = embaralhar(json.quiz);
+
+    // Atualiza estatísticas da tela de início
+    document.querySelector('.quiz-stat-numero').textContent = dadosQuiz.length;
+
+    document.getElementById('btn-comecar').addEventListener('click', () => {
+      document.getElementById('tela-inicio').style.display = 'none';
+      document.getElementById('tela-quiz').style.display = 'block';
+      renderizarPergunta();
+    });
+
+    document.getElementById('btn-proxima').addEventListener('click', proximaPergunta);
+    document.getElementById('btn-reiniciar').addEventListener('click', reiniciarQuiz);
+  }
+
+  document.addEventListener('DOMContentLoaded', iniciar);
+</script>
+
+</body>
+</html>

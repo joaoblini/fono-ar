@@ -1,0 +1,78 @@
+{
+  "estruturas": [
+    {
+      "id": "lingua",
+      "nome": "Língua",
+      "descricao": "Estrutura muscular móvel, principal articulador da fala. Responsável pela mastigação, deglutição e pela produção de sons como /t/, /d/, /n/, /l/, /r/.",
+      "cor": "#e8a87c",
+      "meshName": "Lingua"
+    },
+    {
+      "id": "epiglote",
+      "nome": "Epiglote",
+      "descricao": "Estrutura cartilaginosa em forma de folha localizada na base da língua. Durante a deglutição, inclina-se para cobrir a laringe e proteger as vias aéreas.",
+      "cor": "#c4a882",
+      "meshName": "Epiglote"
+    },
+    {
+      "id": "pregas-vocais",
+      "nome": "Pregas Vocais",
+      "descricao": "Dobras musculomembranosas localizadas na laringe. A vibração gerada pela passagem do ar produz o som fundamental da voz. A frequência de vibração determina o tom vocal.",
+      "cor": "#d4a5a5",
+      "meshName": "PregasVocais"
+    },
+    {
+      "id": "palato-mole",
+      "nome": "Palato Mole (Véu Palatino)",
+      "descricao": "Estrutura músculo-membranosa posterior ao palato duro. Regula a passagem de ar entre as cavidades oral e nasal, sendo fundamental para a ressonância nasal e oral da voz.",
+      "cor": "#f4b8c1",
+      "meshName": "PalatoMole"
+    },
+    {
+      "id": "faringe",
+      "nome": "Faringe",
+      "descricao": "Canal músculo-membranoso que conecta a cavidade nasal e oral à laringe e esôfago. Atua como ressonador da voz e participa da deglutição.",
+      "cor": "#b8cce4",
+      "meshName": "Faringe"
+    },
+    {
+      "id": "laringe",
+      "nome": "Laringe",
+      "descricao": "Órgão fonador composto por cartilagens (tireoide, cricoide, aritenoides). Abriga as pregas vocais e controla a passagem de ar entre a faringe e a traqueia.",
+      "cor": "#a8d8a8",
+      "meshName": "Laringe"
+    }
+  ],
+  "quiz": [
+    {
+      "id": 1,
+      "pergunta": "Qual estrutura é responsável pela vibração que produz o som da voz?",
+      "resposta": "pregas-vocais",
+      "opcoes": ["lingua", "epiglote", "pregas-vocais", "faringe"]
+    },
+    {
+      "id": 2,
+      "pergunta": "Qual estrutura protege as vias aéreas durante a deglutição?",
+      "resposta": "epiglote",
+      "opcoes": ["palato-mole", "epiglote", "laringe", "lingua"]
+    },
+    {
+      "id": 3,
+      "pergunta": "Qual estrutura regula a ressonância nasal e oral da voz?",
+      "resposta": "palato-mole",
+      "opcoes": ["faringe", "lingua", "palato-mole", "laringe"]
+    },
+    {
+      "id": 4,
+      "pergunta": "Qual estrutura é o principal articulador na produção dos sons da fala?",
+      "resposta": "lingua",
+      "opcoes": ["laringe", "epiglote", "faringe", "lingua"]
+    },
+    {
+      "id": 5,
+      "pergunta": "Qual órgão abriga as pregas vocais e é conhecido como órgão fonador?",
+      "resposta": "laringe",
+      "opcoes": ["faringe", "laringe", "palato-mole", "epiglote"]
+    }
+  ]
+}

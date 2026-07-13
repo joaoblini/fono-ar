@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modo Estudo — FonoAR</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <style>
+    #viewer-aframe {
+      position: fixed;
+      top: 60px; left: 0; right: 0; bottom: 0;
+    }
+    #viewer-aframe a-scene {
+      width: 100%;
+      height: 100%;
+    }
+    #labels-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none; /* o overlay não bloqueia, só os filhos .hotspot recebem eventos */
+      z-index: 50;
+    }
+    .label-3d {
+      position: absolute;
+      transform: translate(12px, -50%);
+      background: rgba(13,27,42,0.88);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #e8f0f7;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    /* Hotspot invisível clicável sobre cada esfera */
+    .hotspot {
+      position: absolute;
+      width: 48px; height: 48px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      pointer-events: all; /* sobrescreve o none do pai */
+      z-index: 60;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* label irmão seguinte fica visível quando hotspot está em hover ou ativo */
+    .hotspot:hover   ~ .label-acompanha,
+    .hotspot.ativo   ~ .label-acompanha {
+      opacity: 1;
+    }
+    .hotspot:hover   ~ .label-acompanha { background:rgba(232,168,124,0.95); color:#1a1a1a; border-color:rgba(232,168,124,0.6); }
+    .hotspot.ativo   ~ .label-acompanha { background:rgba(44,110,158,0.95);  color:#fff;    border-color:rgba(74,158,222,0.7); }
+    #painel-info {
+      position: absolute;
+      bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      width: calc(100% - 3rem);
+      max-width: 400px;
+      z-index: 300;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #painel-info.visivel {
+      transform: translateX(-50%) translateY(0);
+    }
+    #sidebar-estruturas {
+      position: fixed;
+      top: 70px; left: 1rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+    #controles {
+      position: fixed;
+      top: 70px; right: 1rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    #btn-fullscreen { font-size: 1rem; padding: 0.5rem 0.7rem; }
+    .dica {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      font-size: 0.75rem;
+      color: rgba(139,175,201,0.5);
+      z-index: 100;
+      text-align: right;
+      line-height: 1.8;
+      pointer-events: none;
+    }
+    /* Modo tela cheia: esconde nav, viewer sobe para y=0 */
+    body.fullscreen .nav-bar      { display: none; }
+    body.fullscreen #viewer-aframe { top: 0; }
+    body.fullscreen #sidebar-estruturas { top: 1rem; }
+    body.fullscreen #controles    { top: 1rem; }
+    body.fullscreen .dica         { bottom: 1.5rem; }
+    @media (max-width: 600px) {
+      #sidebar-estruturas { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <a href="index.html" class="nav-logo">🫁 Fono<span class="acento">AR</span></a>
+  <div class="nav-links">
+    <a href="estudo.html" class="nav-btn ativo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Estudo</span>
+    </a>
+    <a href="ar.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
+      <span>AR</span>
+    </a>
+    <a href="quiz.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Quiz</span>
+    </a>
+  </div>
+</nav>
+
+<div id="sidebar-estruturas"></div>
+
+<div id="controles">
+  <button class="btn btn-secundario" id="btn-reset">↺ Reset</button>
+  <button class="btn btn-secundario" id="btn-fullscreen" title="Tela cheia">⛶</button>
+  <a href="ar.html" class="btn btn-acento">📱 AR</a>
+</div>
+
+<div class="dica">
+  🖱 Arrastar para girar<br>
+  🔍 Scroll para zoom<br>
+  👆 Clique para info
+</div>
+
+<div id="viewer-aframe">
+  <a-scene
+    embedded
+    background="color: #0d1b2a"
+    renderer="antialias: true; colorManagement: true"
+    vr-mode-ui="enabled: false"
+  >
+    <a-camera
+      position="0 0 3"
+      look-controls="enabled: false"
+      wasd-controls="enabled: false"
+    ></a-camera>
+
+    <a-light type="ambient" color="#445566" intensity="0.9"></a-light>
+    <a-light type="directional" color="#aaccee" intensity="1.2" position="2 4 3"></a-light>
+    <a-light type="point" color="#e8a87c" intensity="0.5" position="-2 1 2"></a-light>
+
+    <!-- Grupo rotacionável -->
+    <a-entity id="modelo-grupo">
+      <!-- Silhueta do trato vocal -->
+      <a-sphere position="0 1.05 0"    radius="0.52" color="#c8a882" opacity="0.2" side="double"></a-sphere>
+      <a-sphere position="0 0.55 0.18" radius="0.26" color="#d4a090" opacity="0.15" side="double"></a-sphere>
+      <a-cylinder position="0 -0.1 -0.08" radius="0.20" height="0.65" color="#b8c4cc" opacity="0.12" side="double"></a-cylinder>
+      <a-cylinder position="0 -0.72 -0.05" radius="0.065" height="0.45" color="#8bafc9" opacity="0.25"></a-cylinder>
+    </a-entity>
+
+    <!-- Partículas de fundo -->
+    <a-sphere position="3 2 -5"  radius="0.04" color="#4a9ede" opacity="0.3"></a-sphere>
+    <a-sphere position="-4 -1 -6" radius="0.03" color="#e8a87c" opacity="0.25"></a-sphere>
+    <a-sphere position="2 -3 -4"  radius="0.05" color="#4a9ede" opacity="0.15"></a-sphere>
+  </a-scene>
+
+  <!-- Labels e painel ficam DENTRO do viewer para funcionar em fullscreen -->
+  <div id="labels-overlay"></div>
+
+  <div id="painel-info" class="card">
+    <button id="btn-fechar-info" class="painel-info-fechar" aria-label="Fechar">✕</button>
+    <div class="painel-info-titulo" id="info-nome"></div>
+    <p class="painel-info-texto" id="info-descricao"></p>
+  </div>
+</div>
+
+<script src="scripts/interactions.js"></script>
+<script>
+  let dadosEstruturas = [];
+  let ativoId = null;
+
+  const POS = {
+    'lingua':        { x:  0.00, y:  0.55, z:  0.28 },
+    'palato-mole':   { x:  0.00, y:  0.80, z: -0.04 },
+    'faringe':       { x:  0.00, y:  0.22, z: -0.20 },
+    'epiglote':      { x:  0.00, y:  0.05, z:  0.10 },
+    'laringe':       { x:  0.00, y: -0.28, z: -0.04 },
+    'pregas-vocais': { x:  0.00, y: -0.42, z:  0.02 },
+  };
+
+  // ── Painel ──────────────────────────────────────────────────────────────────
+  function mostrarInfo(id, hotspots, labels) {
+    const est = dadosEstruturas.find(e => e.id === id);
+    if (!est) return;
+    // Desmarca anterior
+    if (ativoId) {
+      if (hotspots[ativoId]) hotspots[ativoId].classList.remove('ativo');
+      if (labels[ativoId])   { labels[ativoId].style.opacity = '0'; labels[ativoId].style.background = ''; labels[ativoId].style.color = ''; }
+    }
+    ativoId = id;
+    if (hotspots[id]) hotspots[id].classList.add('ativo');
+    if (labels[id])   { labels[id].style.opacity = '1'; labels[id].style.background = 'rgba(44,110,158,0.95)'; labels[id].style.color = '#fff'; }
+    document.getElementById('info-nome').textContent = est.nome;
+    document.getElementById('info-descricao').textContent = est.descricao;
+    document.getElementById('painel-info').classList.add('visivel');
+    document.querySelectorAll('.estrutura-chip')
+      .forEach(el => el.classList.toggle('ativo', el.dataset.id === id));
+  }
+
+  function fecharInfo(hotspots, labels) {
+    if (ativoId) {
+      if (hotspots[ativoId]) hotspots[ativoId].classList.remove('ativo');
+      if (labels[ativoId])   { labels[ativoId].style.opacity = '0'; labels[ativoId].style.background = ''; labels[ativoId].style.color = ''; }
+    }
+    ativoId = null;
+    document.getElementById('painel-info').classList.remove('visivel');
+    document.querySelectorAll('.estrutura-chip').forEach(el => el.classList.remove('ativo'));
+  }
+
+  // ── Sidebar ─────────────────────────────────────────────────────────────────
+  function construirSidebar(estruturas, hotspots, labels) {
+    const sidebar = document.getElementById('sidebar-estruturas');
+    estruturas.forEach(est => {
+      const chip = document.createElement('button');
+      chip.className = 'estrutura-chip';
+      chip.dataset.id = est.id;
+      chip.innerHTML = `<span class="estrutura-cor" style="background:${est.cor}"></span><span>${est.nome}</span>`;
+      chip.addEventListener('click', () => mostrarInfo(est.id, hotspots, labels));
+      sidebar.appendChild(chip);
+    });
+  }
+
+  // ── Esferas A-Frame (sem a-text) ────────────────────────────────────────────
+  function construirModelo(estruturas) {
+    const grupo = document.getElementById('modelo-grupo');
+    estruturas.forEach(est => {
+      const p = POS[est.id];
+
+      const anel = document.createElement('a-torus');
+      anel.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
+      anel.setAttribute('radius', '0.13');
+      anel.setAttribute('radius-tubular', '0.007');
+      anel.setAttribute('color', est.cor);
+      anel.setAttribute('opacity', '0.4');
+      anel.setAttribute('rotation', '90 0 0');
+      grupo.appendChild(anel);
+
+      const esfera = document.createElement('a-sphere');
+      esfera.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
+      esfera.setAttribute('radius', '0.085');
+      esfera.setAttribute('color', est.cor);
+      esfera.setAttribute('opacity', '1');
+      esfera.dataset.id = est.id;
+      grupo.appendChild(esfera);
+    });
+  }
+
+  let arrastou = false;
+
+  // ── Hotspots HTML + labels projetados sobre o canvas ───────────────────────
+  function setupOverlay(estruturas, hotspots_out) {
+    const overlay = document.getElementById('labels-overlay');
+    const scene   = document.querySelector('a-scene');
+    const grupo   = document.getElementById('modelo-grupo');
+    const THREE   = AFRAME.THREE;
+    const vec     = new THREE.Vector3();
+
+    const hotspots = {};
+    const labels   = {};
+
+    estruturas.forEach(est => {
+      const btn = document.createElement('button');
+      btn.className = 'hotspot';
+      btn.dataset.id = est.id;
+      btn.setAttribute('aria-label', est.nome);
+      overlay.appendChild(btn);
+      hotspots[est.id] = btn;
+
+      const lbl = document.createElement('div');
+      lbl.className = 'label-3d';
+      lbl.textContent = est.nome;
+      overlay.appendChild(lbl);
+      labels[est.id] = lbl;
+
+      // Clique abre painel apenas se não houve arrasto
+      btn.addEventListener('click', () => { if (!arrastou) mostrarInfo(est.id, hotspots, labels); });
+      btn.addEventListener('touchend', e => { e.preventDefault(); if (!arrastou) mostrarInfo(est.id, hotspots, labels); });
+
+      // Hover mostra label e escala esfera
+      btn.addEventListener('mouseenter', () => {
+        lbl.style.opacity = '1';
+        lbl.style.background = 'rgba(232,168,124,0.95)';
+        lbl.style.color = '#1a1a1a';
+        setEscala(est.id, 1.45);
+      });
+      btn.addEventListener('mouseleave', () => {
+        if (ativoId !== est.id) lbl.style.opacity = '0';
+        lbl.style.background = '';
+        lbl.style.color = '';
+        setEscala(est.id, 1.0);
+      });
+    });
+
+    Object.assign(hotspots_out, hotspots);
+
+    function projetar() {
+      const camEl  = document.querySelector('a-camera');
+      const camera = camEl.getObject3D('camera');
+      if (!camera) { requestAnimationFrame(projetar); return; }
+
+      const rect  = scene.canvas.getBoundingClientRect();
+      const grupO = grupo.object3D;
+
+      estruturas.forEach(est => {
+        const p   = POS[est.id];
+        const btn = hotspots[est.id];
+        const lbl = labels[est.id];
+
+        vec.set(p.x, p.y, p.z);
+        grupO.localToWorld(vec);
+        vec.project(camera);
+
+        if (vec.z > 1) {
+          btn.style.display = 'none';
+          lbl.style.display = 'none';
+          return;
+        }
+
+        const sx = (vec.x *  0.5 + 0.5) * rect.width;
+        const sy = (vec.y * -0.5 + 0.5) * rect.height;
+
+        btn.style.display = 'block';
+        btn.style.left = sx + 'px';
+        btn.style.top  = sy + 'px';
+
+        lbl.style.display = 'block';
+        lbl.style.left = sx + 'px';
+        lbl.style.top  = sy + 'px';
+      });
+
+      requestAnimationFrame(projetar);
+    }
+    projetar();
+
+    return labels;
+  }
+
+  function setEscala(id, s) {
+    document.getElementById('modelo-grupo').querySelectorAll('a-sphere').forEach(el => {
+      if (el.dataset.id === id) el.object3D.scale.set(s, s, s);
+    });
+  }
+
+  // ── Rotação via drag + zoom ─────────────────────────────────────────────────
+  function setupRotacao() {
+    const scene   = document.querySelector('a-scene');
+    const canvas  = scene.canvas;
+    const overlay = document.getElementById('labels-overlay');
+    const grupo   = document.getElementById('modelo-grupo');
+    const cam     = document.querySelector('a-camera');
+    let drag = false, lastX = 0, lastY = 0;
+    let rotY = 0, rotX = 0, autoRot = true;
+
+    function girar() {
+      if (autoRot) rotY += 0.3;
+      grupo.setAttribute('rotation', `${rotX} ${rotY} 0`);
+      requestAnimationFrame(girar);
+    }
+    girar();
+
+    function startDrag(x, y) { drag = true; autoRot = false; lastX = x; lastY = y; arrastou = false; }
+    function moveDrag(x, y) {
+      if (!drag) return;
+      const dx = x - lastX, dy = y - lastY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) arrastou = true;
+      rotY += dx * 0.4;
+      rotX += dy * 0.4;
+      rotX = Math.max(-60, Math.min(60, rotX));
+      lastX = x; lastY = y;
+    }
+    function endDrag() { drag = false; }
+
+    // mousedown no canvas OU no overlay inicia o drag
+    canvas.addEventListener('mousedown',  e => startDrag(e.clientX, e.clientY));
+    overlay.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+
+    // mousemove e mouseup no window para capturar mesmo fora do elemento
+    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+    window.addEventListener('mouseup',   endDrag);
+
+    // Touch
+    canvas.addEventListener('touchstart',  e => startDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    overlay.addEventListener('touchstart', e => startDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    window.addEventListener('touchmove', e => {
+      if (!drag) return;
+      e.preventDefault();
+      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    window.addEventListener('touchend', endDrag);
+
+    // Zoom via scroll
+    canvas.addEventListener('wheel', e => {
+      const pos = cam.getAttribute('position');
+      pos.z = Math.max(1.2, Math.min(6, pos.z + e.deltaY * 0.005));
+      cam.setAttribute('position', pos);
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      rotY = 0; rotX = 0; autoRot = true;
+      cam.setAttribute('position', '0 0 3');
+    });
+  }
+
+  // ── Tela cheia ──────────────────────────────────────────────────────────────
+  function setupFullscreen() {
+    const btn   = document.getElementById('btn-fullscreen');
+    const scene = document.querySelector('a-scene');
+
+    function entrar() {
+      document.body.classList.add('fullscreen');
+      btn.textContent = '✕';
+      btn.title = 'Sair da tela cheia';
+      setTimeout(() => scene.resize(), 50);
+    }
+    function sair() {
+      document.body.classList.remove('fullscreen');
+      btn.textContent = '⛶';
+      btn.title = 'Tela cheia';
+      setTimeout(() => scene.resize(), 50);
+    }
+
+    btn.addEventListener('click', () =>
+      document.body.classList.contains('fullscreen') ? sair() : entrar()
+    );
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.body.classList.contains('fullscreen')) sair();
+    });
+  }
+
+  // ── Inicialização ────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    const resp = await fetch('data/estruturas.json');
+    const json = await resp.json();
+    dadosEstruturas = json.estruturas;
+
+    const scene = document.querySelector('a-scene');
+    const init = () => {
+      construirModelo(dadosEstruturas);
+      const hotspots = {};
+      const labels = setupOverlay(dadosEstruturas, hotspots);
+      construirSidebar(dadosEstruturas, hotspots, labels);
+      setupRotacao();
+      setupFullscreen();
+      document.getElementById('btn-fechar-info')
+        .addEventListener('click', () => fecharInfo(hotspots, labels));
+    };
+    scene.hasLoaded ? init() : scene.addEventListener('loaded', init);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerar Marcador AR — FonoAR</title>
+  <!--
+    Ferramenta auxiliar: compile o marcador SVG para o formato .mind do MindAR.
+    Execute esta página localmente, clique em "Compilar" e salve o arquivo .mind
+    em images/marcador-trato-vocal.mind
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  <style>
+    body { font-family: system-ui; background: #111; color: #eee; padding: 2rem; }
+    h2 { color: #e8a87c; }
+    canvas { border: 1px solid #333; display: block; margin: 1rem 0; }
+    button { padding: .6rem 1.4rem; background: #2c6e9e; color: white; border: none;
+             border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    button:hover { background: #4a9ede; }
+    #status { margin-top: 1rem; color: #8bafc9; }
+  </style>
+</head>
+<body>
+  <h2>Compilador de Marcador — FonoAR</h2>
+  <p>Esta página gera o arquivo <code>.mind</code> a partir do marcador SVG.<br>
+     Abra localmente (via servidor HTTP), clique em Compilar e salve o resultado.</p>
+
+  <canvas id="canvas-marcador" width="512" height="512"></canvas>
+  <button id="btn-compilar">Compilar marcador .mind</button>
+  <div id="status"></div>
+
+  <script>
+    // Desenha o marcador no canvas
+    const canvas = document.getElementById('canvas-marcador');
+    const ctx = canvas.getContext('2d');
+
+    function desenharMarcador() {
+      const W = 512, H = 512;
+      const s = W / 200; // escala do SVG 200x200 para 512x512
+
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = 'black';
+      // Borda
+      roundRect(ctx, 5*s, 5*s, 190*s, 190*s, 4*s); ctx.fill();
+      ctx.fillStyle = 'white';
+      roundRect(ctx, 12*s, 12*s, 176*s, 176*s, 2*s); ctx.fill();
+
+      ctx.fillStyle = 'black';
+      // Cantos
+      [
+        [20, 20], [130, 20], [20, 130]
+      ].forEach(([x, y]) => {
+        roundRect(ctx, x*s, y*s, 50*s, 50*s, 3*s); ctx.fill();
+        ctx.fillStyle = 'white';
+        roundRect(ctx, (x+8)*s, (y+8)*s, 34*s, 34*s, 2*s); ctx.fill();
+        ctx.fillStyle = 'black';
+        roundRect(ctx, (x+16)*s, (y+16)*s, 18*s, 18*s, 1*s); ctx.fill();
+      });
+
+      // Módulos de dados
+      const modulos = [
+        [92,20,16,16],[112,20,10,10],[20,92,16,16],[20,112,10,10],
+        [92,92,16,16],[112,112,12,12],[130,92,10,10],[148,130,14,14],
+        [130,148,14,14],[148,148,14,14],[92,148,10,10],[106,130,10,10]
+      ];
+      modulos.forEach(([x,y,w,h]) => {
+        ctx.fillRect(x*s, y*s, w*s, h*s);
+      });
+
+      // Texto
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = `bold ${11*s}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText('FonoAR', 100*s, 106*s);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    desenharMarcador();
+
+    document.getElementById('btn-compilar').addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      status.textContent = 'Compilando… pode levar alguns segundos.';
+
+      try {
+        const compiler = new MINDAR.IMAGE.Compiler();
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Cria ImageBitmap para o compilador
+        const blob = await new Promise(res => canvas.toBlob(res));
+        const img = await createImageBitmap(blob);
+
+        await compiler.compileImageTargets([img], (progress) => {
+          status.textContent = `Compilando: ${Math.round(progress * 100)}%`;
+        });
+
+        const exportedBuffer = await compiler.exportData();
+        const exportBlob = new Blob([exportedBuffer]);
+        const url = URL.createObjectURL(exportBlob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'marcador-trato-vocal.mind';
+        a.click();
+
+        status.textContent = '✓ Arquivo .mind baixado! Mova para a pasta images/.';
+      } catch (e) {
+        status.textContent = 'Erro: ' + e.message;
+        console.error(e);
+      }
+    });
+  </script>
+</body>
+</html>

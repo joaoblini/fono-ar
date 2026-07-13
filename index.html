@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FonoAR — Atlas Interativo do Trato Vocal</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <style>
+    /* Partículas de fundo sutis */
+    .fundo-grade {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(74,158,222,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,158,222,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero { position: relative; z-index: 1; }
+    .tag-beta {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      background: rgba(232,168,124,0.15);
+      border: 1px solid rgba(232,168,124,0.3);
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--cor-acento);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+    }
+    .rodape {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.75rem;
+      color: rgba(139,175,201,0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div class="fundo-grade"></div>
+
+<!-- Navegação -->
+<nav class="nav-bar">
+  <a href="index.html" class="nav-logo">
+    🫁 Fono<span class="acento">AR</span>
+  </a>
+  <div class="nav-links">
+    <a href="estudo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Estudo</span>
+    </a>
+    <a href="ar.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
+      <span>AR</span>
+    </a>
+    <a href="quiz.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Quiz</span>
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<main class="pagina">
+  <section class="hero">
+    <span class="tag-beta">Protótipo v1.0</span>
+    <h1 class="hero-titulo">
+      Atlas Interativo<br>do <span class="acento">Trato Vocal</span>
+    </h1>
+    <p class="hero-subtitulo">
+      Explore a anatomia do sistema fonoarticulatório em 3D,
+      visualize em realidade aumentada e teste seus conhecimentos.
+    </p>
+
+    <div class="hero-modos">
+      <a href="estudo.html" class="modo-card">
+        <span class="modo-icone">🔬</span>
+        <span class="modo-titulo">Modo Estudo</span>
+        <span class="modo-descricao">Explore o modelo 3D do trato vocal com rotação, zoom e camadas anatômicas</span>
+      </a>
+      <a href="ar.html" class="modo-card">
+        <span class="modo-icone">📱</span>
+        <span class="modo-titulo">Realidade Aumentada</span>
+        <span class="modo-descricao">Veja o modelo sobre uma superfície real usando a câmera do dispositivo</span>
+      </a>
+      <a href="quiz.html" class="modo-card">
+        <span class="modo-icone">🧠</span>
+        <span class="modo-titulo">Quiz</span>
+        <span class="modo-descricao">Identifique estruturas anatômicas e teste seus conhecimentos em fonoaudiologia</span>
+      </a>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    FonoAR — Atlas Interativo do Trato Vocal &nbsp;·&nbsp; Fonoaudiologia
+  </footer>
+</main>
+
+</body>
+</html>
