@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo 3D · Laboratório de Saúde Digital</title>
+  <link rel="stylesheet" href="styles/style.css">
+  <style>
+    .fundo-grade {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(74,158,222,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,158,222,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .conteudo { position: relative; z-index: 1; }
+
+    /* ── Seleção principal ── */
+    .secao-selecao {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 60px);
+      text-align: center;
+      padding: 2rem 1rem 4rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(44,110,158,0.18) 0%, transparent 65%);
+    }
+
+    .secao-titulo {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+
+    .secao-titulo .acento { color: var(--cor-acento); }
+
+    .secao-subtitulo {
+      font-size: 1rem;
+      color: var(--cor-texto-suave);
+      max-width: 480px;
+      line-height: 1.6;
+      margin-bottom: 3rem;
+    }
+
+    .categorias-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .categoria-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2.5rem 2rem;
+      background: var(--cor-fundo-card);
+      border: 1px solid rgba(74, 158, 222, 0.2);
+      border-radius: var(--raio);
+      cursor: pointer;
+      color: var(--cor-texto);
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .categoria-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.25s;
+      border-radius: var(--raio);
+    }
+
+    .categoria-card.celula::before  { background: radial-gradient(ellipse at 50% 0%, rgba(76,175,135,0.12) 0%, transparent 70%); }
+    .categoria-card.dna::before     { background: radial-gradient(ellipse at 50% 0%, rgba(74,158,222,0.12) 0%, transparent 70%); }
+
+    .categoria-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+    }
+
+    .categoria-card.celula:hover  { border-color: #4caf87; }
+    .categoria-card.dna:hover     { border-color: var(--cor-secundaria); }
+
+    .categoria-card:hover::before { opacity: 1; }
+
+    .categoria-icone {
+      font-size: 3rem;
+      line-height: 1;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+    }
+
+    .categoria-nome {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .categoria-contagem {
+      font-size: 0.78rem;
+      color: var(--cor-texto-suave);
+    }
+
+    .categoria-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.22rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge-celula { background: rgba(76,175,135,0.18); color: #4caf87; border: 1px solid rgba(76,175,135,0.3); }
+    .badge-dna    { background: rgba(74,158,222,0.18); color: var(--cor-secundaria); border: 1px solid rgba(74,158,222,0.3); }
+
+    /* ── Painel lateral de componentes ── */
+    .painel-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 800;
+    }
+
+    .painel-overlay.aberto { display: flex; }
+
+    .painel-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+    }
+
+    .painel-lateral {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(480px, 100vw);
+      height: 100%;
+      background: #0f2236;
+      border-left: 1px solid rgba(74,158,222,0.2);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      overflow: hidden;
+    }
+
+    .painel-overlay.aberto .painel-lateral { transform: translateX(0); }
+
+    .painel-cabecalho {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(74,158,222,0.15);
+      flex-shrink: 0;
+    }
+
+    .painel-cabecalho-titulo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .painel-icone { font-size: 1.6rem; }
+
+    .painel-nome {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .painel-fechar {
+      background: none;
+      border: none;
+      color: var(--cor-texto-suave);
+      cursor: pointer;
+      font-size: 1.3rem;
+      padding: 0.25rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .painel-fechar:hover { color: var(--cor-texto); }
+
+    .painel-instrucao {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.82rem;
+      color: var(--cor-texto-suave);
+      border-bottom: 1px solid rgba(74,158,222,0.1);
+      flex-shrink: 0;
+    }
+
+    .painel-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .componente-item {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(74,158,222,0.12);
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--cor-texto);
+      transition: all 0.18s;
+    }
+
+    .componente-item:hover {
+      background: rgba(74,158,222,0.08);
+      border-color: rgba(74,158,222,0.35);
+      transform: translateX(-3px);
+    }
+
+    .componente-item.celula:hover  { border-color: rgba(76,175,135,0.4); background: rgba(76,175,135,0.07); }
+    .componente-item.dna:hover     { border-color: rgba(74,158,222,0.4); }
+
+    .componente-cor {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .componente-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .componente-nome {
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .componente-detalhe {
+      font-size: 0.75rem;
+      color: var(--cor-texto-suave);
+      margin-top: 0.15rem;
+    }
+
+    .componente-qtd {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .qtd-celula { background: rgba(76,175,135,0.15); color: #4caf87; }
+    .qtd-dna    { background: rgba(74,158,222,0.15); color: var(--cor-secundaria); }
+
+    .seta-item {
+      color: var(--cor-texto-suave);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    /* Modal de visualização de componente */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.aberto { display: flex; }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal-card {
+      position: relative;
+      z-index: 1;
+      background: #112233;
+      border: 1px solid rgba(74,158,222,0.25);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: entrar 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes entrar {
+      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+
+    .modal-fechar {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--cor-texto-suave);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0.25rem;
+      transition: color 0.15s;
+    }
+
+    .modal-fechar:hover { color: var(--cor-texto); }
+
+    .modal-icone {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .modal-titulo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: var(--cor-acento);
+    }
+
+    .modal-categoria {
+      font-size: 0.78rem;
+      color: var(--cor-texto-suave);
+      margin-bottom: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .modal-descricao {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--cor-texto-suave);
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-meta {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+
+    .modal-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      color: var(--cor-texto-suave);
+    }
+
+    .modal-acoes {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .modal-acoes .btn { flex: 1; justify-content: center; }
+
+    .rodape {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.75rem;
+      color: rgba(139,175,201,0.4);
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="fundo-grade"></div>
+
+<nav class="nav-bar">
+  <a href="index.html" class="nav-logo"><img src="logo_saude_digital.png" alt="LabSD" style="height:28px;width:auto;opacity:.9"></a>
+  <div class="nav-links">
+    <a href="estudo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Atlas</span>
+    </a>
+    <a href="ar.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
+      <span>AR</span>
+    </a>
+    <a href="quiz.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Quiz</span>
+    </a>
+    <a href="catalogo.html" class="nav-btn ativo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Catálogo</span>
+    </a>
+  </div>
+</nav>
+
+<main class="pagina conteudo">
+  <section class="secao-selecao">
+    <h1 class="secao-titulo">
+      Catálogo de <span class="acento">Modelos 3D</span>
+    </h1>
+    <p class="secao-subtitulo">
+      Explore os modelos 3D do Laboratório de Saúde Digital: estruturas biológicas, anatômicas e muito mais. Selecione uma categoria para visualizar os componentes.
+      Selecione uma categoria para ver os modelos.
+    </p>
+
+    <div class="categorias-grid">
+      <div class="categoria-card celula" onclick="abrirPainel('celula')">
+        <span class="categoria-icone">🧫</span>
+        <span class="categoria-nome">Célula</span>
+        <span class="categoria-contagem">8 componentes · 21 peças no total</span>
+        <span class="categoria-badge badge-celula">Biologia Celular</span>
+        <a href="visor3d.html?modelo=celula" class="btn btn-sucesso" style="font-size:0.78rem;padding:0.4rem 1rem;margin-top:0.25rem" onclick="event.stopPropagation()">🔬 Visualizar 3D</a>
+      </div>
+
+      <div class="categoria-card dna" onclick="abrirPainel('dna')">
+        <span class="categoria-icone">🧬</span>
+        <span class="categoria-nome">DNA</span>
+        <span class="categoria-contagem">6 componentes · 22 peças no total</span>
+        <span class="categoria-badge badge-dna">Genética Molecular</span>
+        <a href="visor3d.html?modelo=dna" class="btn btn-primario" style="font-size:0.78rem;padding:0.4rem 1rem;margin-top:0.25rem" onclick="event.stopPropagation()">🔬 Visualizar 3D</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    Laboratório de Saúde Digital &nbsp;·&nbsp; UFCSPA
+  </footer>
+</main>
+
+<!-- ── Painel lateral ── -->
+<div id="painel-overlay" class="painel-overlay" role="dialog" aria-modal="true">
+  <div class="painel-backdrop" onclick="fecharPainel()"></div>
+  <aside class="painel-lateral">
+    <header class="painel-cabecalho">
+      <div class="painel-cabecalho-titulo">
+        <span id="painel-icone" class="painel-icone"></span>
+        <span id="painel-nome" class="painel-nome"></span>
+      </div>
+      <button class="painel-fechar" onclick="fecharPainel()" aria-label="Fechar">✕</button>
+    </header>
+    <div class="painel-instrucao">Clique em um componente para ver os detalhes e quantidade de peças.</div>
+    <div id="painel-lista" class="painel-lista"></div>
+  </aside>
+</div>
+
+<!-- ── Modal de detalhes ── -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-backdrop" onclick="fecharModal()"></div>
+  <div class="modal-card">
+    <button class="modal-fechar" onclick="fecharModal()" aria-label="Fechar">✕</button>
+    <span id="modal-icone" class="modal-icone"></span>
+    <div id="modal-titulo" class="modal-titulo"></div>
+    <div id="modal-categoria" class="modal-categoria"></div>
+    <p id="modal-descricao" class="modal-descricao"></p>
+    <div id="modal-meta" class="modal-meta"></div>
+    <div class="modal-acoes">
+      <button class="btn btn-secundario" onclick="fecharModal()">← Voltar</button>
+      <a id="modal-btn-3d" class="btn btn-primario" href="#" style="display:none">🔬 Ver 3D</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DADOS = {
+    celula: {
+      nome: 'Célula',
+      icone: '🧫',
+      categoria: 'Biologia Celular',
+      componentes: [
+        {
+          id: 'mitocondria',
+          nome: 'Mitocôndria',
+          icone: '⚡',
+          cor: '#e8a87c',
+          pecas: 6,
+          arquivos: 1,
+          descricao: 'Organela responsável pela produção de energia (ATP) através da respiração celular. Conhecida como a "usina de força" da célula, possui membrana dupla e seu próprio DNA.'
+        },
+        {
+          id: 'reticulo-rugoso',
+          nome: 'Retículo Endoplasmático Rugoso',
+          icone: '🔩',
+          cor: '#b8cce4',
+          pecas: 3,
+          arquivos: 3,
+          descricao: 'Rede de membranas revestida por ribossomos. Responsável pela síntese, dobramento e transporte de proteínas destinadas à secreção ou à membrana celular.'
+        },
+        {
+          id: 'reticulo-liso',
+          nome: 'Retículo Endoplasmático Liso',
+          icone: '🌀',
+          cor: '#a8d8a8',
+          pecas: 6,
+          arquivos: 5,
+          descricao: 'Rede de membranas sem ribossomos, envolvida na síntese de lipídios, metabolismo de carboidratos e desintoxicação de substâncias nocivas.'
+        },
+        {
+          id: 'golgi',
+          nome: 'Complexo de Golgi',
+          icone: '📦',
+          cor: '#f4b8c1',
+          pecas: 2,
+          arquivos: 6,
+          descricao: 'Organela de processamento e distribuição celular. Modifica, classifica e empacota proteínas e lipídios vindos do retículo endoplasmático para envio a seus destinos.'
+        },
+        {
+          id: 'lisossomo',
+          nome: 'Lisossomo',
+          icone: '🗑️',
+          cor: '#d4a5a5',
+          pecas: 2,
+          arquivos: 3,
+          descricao: 'Organela digestiva que contém enzimas hidrolíticas. Responsável pela degradação de materiais intracelulares e extração de nutrientes de substâncias ingeridas pela célula.'
+        },
+        {
+          id: 'nucleo',
+          nome: 'Núcleo Celular',
+          icone: '🫧',
+          cor: '#c4a882',
+          pecas: 1,
+          arquivos: 1,
+          descricao: 'Centro de controle da célula. Contém o DNA (material genético) organizado em cromossomos, e coordena o crescimento, metabolismo e reprodução celular.'
+        },
+        {
+          id: 'citoplasma-inferior',
+          nome: 'Citoplasma Inferior',
+          icone: '🧊',
+          cor: '#8bafc9',
+          pecas: 1,
+          arquivos: 1,
+          descricao: 'Metade inferior da estrutura do citoplasma. Meio aquoso que preenche o interior da célula e serve de suporte para as organelas e reações bioquímicas.'
+        },
+        {
+          id: 'citoplasma-lateral',
+          nome: 'Citoplasma Lateral',
+          icone: '🧊',
+          cor: '#7fa0b8',
+          pecas: 1,
+          arquivos: 1,
+          descricao: 'Seção lateral da estrutura do citoplasma. Parte do meio intracelular que circunda as organelas e facilita o transporte de moléculas pelo interior da célula.'
+        }
+      ]
+    },
+    dna: {
+      nome: 'DNA',
+      icone: '🧬',
+      categoria: 'Genética Molecular',
+      componentes: [
+        {
+          id: 'alfa-helice-1',
+          nome: 'Alfa-hélice 1',
+          icone: '🔄',
+          cor: '#4a9ede',
+          pecas: 1,
+          arquivos: 1,
+          descricao: 'Primeira parte da estrutura de dupla-hélice do DNA. Representa a torção característica da molécula de DNA, essencial para a compactação do material genético no núcleo.'
+        },
+        {
+          id: 'alfa-helice-2',
+          nome: 'Alfa-hélice 2',
+          icone: '🔄',
+          cor: '#2c6e9e',
+          pecas: 1,
+          arquivos: 1,
+          descricao: 'Segunda parte da estrutura de dupla-hélice do DNA. Complementa a hélice 1 formando a estrutura completa da molécula de DNA com suas duas fitas antiparalelas.'
+        },
+        {
+          id: 'adenina',
+          nome: 'Adenina (A)',
+          icone: '🔵',
+          cor: '#4caf87',
+          pecas: 5,
+          arquivos: 5,
+          descricao: 'Base nitrogenada púrica do DNA. A Adenina sempre se pareia com a Timina (A-T) através de duas pontes de hidrogênio, sendo fundamental para a estrutura e replicação do DNA.'
+        },
+        {
+          id: 'citosina',
+          nome: 'Citosina (C)',
+          icone: '🟡',
+          cor: '#f0c040',
+          pecas: 5,
+          arquivos: 5,
+          descricao: 'Base nitrogenada pirimídica do DNA. A Citosina se pareia com a Guanina (C-G) através de três pontes de hidrogênio, conferindo maior estabilidade à molécula de DNA.'
+        },
+        {
+          id: 'guanina',
+          nome: 'Guanina (G)',
+          icone: '🟠',
+          cor: '#e8a87c',
+          pecas: 5,
+          arquivos: 5,
+          descricao: 'Base nitrogenada púrica do DNA. A Guanina se pareia com a Citosina (G-C) com três pontes de hidrogênio. Par G-C é o mais estável da dupla-hélice.'
+        },
+        {
+          id: 'timina',
+          nome: 'Timina (T)',
+          icone: '🔴',
+          cor: '#e05252',
+          pecas: 5,
+          arquivos: 5,
+          descricao: 'Base nitrogenada pirimídica exclusiva do DNA (no RNA é substituída pelo Uracil). A Timina se pareia com a Adenina (T-A) através de duas pontes de hidrogênio.'
+        }
+      ]
+    }
+  };
+
+  // Mapeamento id-catálogo → id-visor
+  const ID_VISOR = {
+    celula: {
+      'mitocondria':        'mito',
+      'reticulo-rugoso':    'ret-rug',
+      'reticulo-liso':      'ret-lis',
+      'golgi':              'golgi',
+      'lisossomo':          'liso',
+      'nucleo':             'nucleo',
+      'citoplasma-inferior':'citoplasma',
+      'citoplasma-lateral': 'citoplasma',
+      'membrana':           'membrana',
+    },
+    dna: {
+      'alfa-helice-1': 'helice1',
+      'alfa-helice-2': 'helice2',
+      'adenina':       'adenina',
+      'citosina':      'citosina',
+      'guanina':       'guanina',
+      'timina':        'timina',
+    }
+  };
+
+  function visorUrl(categoria, compId) {
+    const iso = (ID_VISOR[categoria] ?? {})[compId] ?? compId;
+    return `visor3d.html?modelo=${categoria}&iso=${iso}`;
+  }
+
+  let categoriaAtual = null;
+
+  function abrirPainel(categoria) {
+    categoriaAtual = categoria;
+    const dados = DADOS[categoria];
+    const overlay = document.getElementById('painel-overlay');
+    const lista   = document.getElementById('painel-lista');
+
+    document.getElementById('painel-icone').textContent = dados.icone;
+    document.getElementById('painel-nome').textContent  = dados.nome;
+
+    lista.innerHTML = '';
+    dados.componentes.forEach(comp => {
+      const item = document.createElement('div');
+      item.className = `componente-item ${categoria}`;
+      item.onclick = () => { window.location.href = visorUrl(categoria, comp.id); };
+      item.innerHTML = `
+        <span class="componente-cor" style="background:${comp.cor}"></span>
+        <div class="componente-info">
+          <div class="componente-nome">${comp.icone} ${comp.nome}</div>
+          <div class="componente-detalhe">${comp.arquivos} arquivo${comp.arquivos > 1 ? 's' : ''} STL</div>
+        </div>
+        <span class="componente-qtd qtd-${categoria}">${comp.pecas} pç</span>
+        <span class="seta-item">›</span>
+      `;
+      lista.appendChild(item);
+    });
+
+    overlay.classList.add('aberto');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function fecharPainel() {
+    document.getElementById('painel-overlay').classList.remove('aberto');
+    document.body.style.overflow = '';
+  }
+
+  function abrirModal(categoria, id) {
+    const comp = DADOS[categoria].componentes.find(c => c.id === id);
+    if (!comp) return;
+
+    document.getElementById('modal-icone').textContent    = comp.icone;
+    document.getElementById('modal-titulo').textContent   = comp.nome;
+    document.getElementById('modal-categoria').textContent = DADOS[categoria].nome + ' · ' + DADOS[categoria].categoria;
+    document.getElementById('modal-descricao').textContent = comp.descricao;
+
+    const meta = document.getElementById('modal-meta');
+    meta.innerHTML = `
+      <span class="modal-meta-item">🖨️ ${comp.pecas} peça${comp.pecas > 1 ? 's' : ''} para imprimir</span>
+      <span class="modal-meta-item">📄 ${comp.arquivos} arquivo${comp.arquivos > 1 ? 's' : ''} STL</span>
+      <span class="modal-meta-item" style="color:${comp.cor}">● ${DADOS[categoria].nome}</span>
+    `;
+
+    // Botão "Ver 3D"
+    const btn3d = document.getElementById('modal-btn-3d');
+    if (categoria === 'celula' || categoria === 'dna') {
+      btn3d.href = visorUrl(categoria, comp.id);
+      btn3d.style.display = '';
+    } else {
+      btn3d.style.display = 'none';
+    }
+
+    document.getElementById('modal-overlay').classList.add('aberto');
+  }
+
+  function fecharModal() {
+    document.getElementById('modal-overlay').classList.remove('aberto');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('modal-overlay').classList.contains('aberto')) {
+        fecharModal();
+      } else {
+        fecharPainel();
+      }
+    }
+  });
+</script>
+</body>
+</html>

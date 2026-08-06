@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz — FonoAR</title>
+  <title>Quiz · LabSD · Saúde Digital</title>
   <link rel="stylesheet" href="styles/style.css">
   <style>
     .quiz-pagina {
@@ -144,11 +144,11 @@
 
 <!-- Nav -->
 <nav class="nav-bar">
-  <a href="index.html" class="nav-logo">🫁 Fono<span class="acento">AR</span></a>
+  <a href="index.html" class="nav-logo"><img src="logo_saude_digital.png" alt="LabSD" style="height:28px;width:auto;opacity:.9"></a>
   <div class="nav-links">
     <a href="estudo.html" class="nav-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      <span>Estudo</span>
+      <span>Atlas</span>
     </a>
     <a href="ar.html" class="nav-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
@@ -158,6 +158,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Quiz</span>
     </a>
+    <a href="catalogo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Catálogo</span>
+    </a>
   </div>
 </nav>
 
@@ -166,15 +170,15 @@
   <!-- Tela de início -->
   <div id="tela-inicio">
     <div class="quiz-header">
-      <h1>🧠 Quiz <span style="color:var(--cor-acento)">Anatômico</span></h1>
-      <p>Teste seus conhecimentos sobre o trato vocal</p>
+      <h1>🧠 Quiz <span style="color:var(--cor-acento)">Interativo</span></h1>
+      <p>Teste seus conhecimentos sobre estruturas biológicas</p>
     </div>
 
     <div class="quiz-intro-card">
       <div class="quiz-intro-icone">🎯</div>
       <h2 style="font-size:1.1rem; margin-bottom:0.5rem">Como funciona</h2>
       <p style="color:var(--cor-texto-suave); font-size:0.9rem; line-height:1.6">
-        Você verá 5 perguntas sobre estruturas anatômicas do trato vocal.
+        Você verá 5 perguntas sobre estruturas anatômicas e biológicas.
         Para cada pergunta, escolha a estrutura correta entre quatro opções.
         No final, você verá sua pontuação e poderá revisar os erros.
       </p>
@@ -199,7 +203,7 @@
 
     <div style="text-align:center">
       <a href="estudo.html" class="btn btn-secundario" style="font-size:0.85rem">
-        📚 Estudar antes de começar
+        📚 Ver Atlas 3D
       </a>
     </div>
   </div>
@@ -242,7 +246,7 @@
           🔄 Tentar novamente
         </button>
         <a href="estudo.html" class="btn btn-secundario">
-          📚 Revisar no Atlas
+          📚 Revisar no Atlas 3D
         </a>
       </div>
     </div>
@@ -389,8 +393,8 @@
     document.getElementById('resultado-estrelas').textContent = estrelas(pct);
 
     const msgs = {
-      100: 'Perfeito! Domínio completo da anatomia fonoaudiológica!',
-      80:  'Excelente! Você conhece muito bem o trato vocal.',
+      100: 'Perfeito! Domínio completo da anatomia e biologia!',
+      80:  'Excelente! Você domina muito bem as estruturas biológicas.',
       60:  'Bom resultado! Revise as estruturas e tente novamente.',
       40:  'Continue estudando! Use o Atlas para revisar.',
       0:   'Não desista! Explore o Modo Estudo antes de tentar de novo.'

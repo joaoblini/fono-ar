@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modo Estudo — FonoAR</title>
+  <title>Atlas 3D · LabSD · Saúde Digital</title>
   <link rel="stylesheet" href="styles/style.css">
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
@@ -112,11 +112,11 @@
 <body>
 
 <nav class="nav-bar">
-  <a href="index.html" class="nav-logo">🫁 Fono<span class="acento">AR</span></a>
+  <a href="index.html" class="nav-logo"><img src="logo_saude_digital.png" alt="LabSD" style="height:28px;width:auto;opacity:.9"></a>
   <div class="nav-links">
     <a href="estudo.html" class="nav-btn ativo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      <span>Estudo</span>
+      <span>Atlas</span>
     </a>
     <a href="ar.html" class="nav-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
@@ -125,6 +125,10 @@
     <a href="quiz.html" class="nav-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Quiz</span>
+    </a>
+    <a href="catalogo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Catálogo</span>
     </a>
   </div>
 </nav>
@@ -162,7 +166,7 @@
 
     <!-- Grupo rotacionável -->
     <a-entity id="modelo-grupo">
-      <!-- Silhueta do trato vocal -->
+      <!-- Silhueta anatômica -->
       <a-sphere position="0 1.05 0"    radius="0.52" color="#c8a882" opacity="0.2" side="double"></a-sphere>
       <a-sphere position="0 0.55 0.18" radius="0.26" color="#d4a090" opacity="0.15" side="double"></a-sphere>
       <a-cylinder position="0 -0.1 -0.08" radius="0.20" height="0.65" color="#b8c4cc" opacity="0.12" side="double"></a-cylinder>

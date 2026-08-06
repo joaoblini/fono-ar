@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizador 3D · LabSD · Saúde Digital</title>
+  <link rel="stylesheet" href="styles/style.css">
+
+  <style>
+    body { overflow: hidden; margin: 0; }
+
+    #canvas-wrap {
+      position: fixed;
+      top: 60px; left: 0; right: 0; bottom: 0;
+    }
+    #canvas-wrap canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* sidebar */
+    #sidebar {
+      position: fixed; top: 70px; left: 1rem; z-index: 200;
+      display: flex; flex-direction: column; gap: 0.3rem;
+      max-height: calc(100vh - 90px); overflow-y: auto; width: 224px;
+    }
+    #sidebar::-webkit-scrollbar { width: 4px; }
+    #sidebar::-webkit-scrollbar-thumb { background: rgba(74,158,222,.3); border-radius: 2px; }
+
+    .chip {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .45rem .75rem;
+      background: rgba(13,27,42,.92);
+      border: 1px solid rgba(74,158,222,.18); border-radius: 8px;
+      cursor: pointer; font-size: .78rem; color: var(--cor-texto);
+      transition: all .18s; text-align: left; font-family: inherit; width: 100%;
+    }
+    .chip:hover   { border-color: rgba(74,158,222,.5); background: rgba(74,158,222,.08); }
+    .chip.isolado { border-color: var(--cor-acento); background: rgba(232,168,124,.14); color: var(--cor-acento); }
+    .chip.oculto  { opacity: .32; }
+    .chip-cor  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .chip-nome { flex: 1; line-height: 1.2; }
+
+    /* controles */
+    #ctrl {
+      position: fixed; top: 70px; right: 1rem; z-index: 200;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    #btn-fs { font-size: 1rem; padding: .5rem .7rem; }
+
+    /* dica */
+    .dica {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      font-size: .72rem; color: rgba(139,175,201,.45);
+      z-index: 100; text-align: right; line-height: 1.9; pointer-events: none;
+    }
+
+    /* painel info */
+    #painel {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(130%);
+      width: calc(100% - 3rem); max-width: 430px; z-index: 300;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      background: rgba(17,34,51,.97);
+      border: 1px solid rgba(232,168,124,.35); border-radius: 14px;
+      padding: 1.25rem; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    }
+    #painel.show { transform: translateX(-50%) translateY(0); }
+    .ph  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .55rem; }
+    #pnome  { font-size: 1rem; font-weight: 700; color: var(--cor-acento); }
+    #pclose { background: none; border: none; color: var(--cor-texto-suave); cursor: pointer; font-size: 1.1rem; padding: 0; }
+    #pdesc  { font-size: .83rem; line-height: 1.6; color: var(--cor-texto-suave); margin-bottom: .75rem; }
+    .ptags  { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .ptag   { font-size: .72rem; padding: .18rem .55rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; color: var(--cor-texto-suave); }
+
+    /* banner isolamento */
+    #banner {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+      z-index: 300; display: none; align-items: center; gap: .75rem;
+      background: rgba(17,34,51,.96); border: 1px solid rgba(232,168,124,.4);
+      border-radius: 30px; padding: .4rem .9rem .4rem 1rem;
+      font-size: .82rem; color: var(--cor-acento); white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+    #banner.show { display: flex; }
+    #banner-nome { font-weight: 700; }
+    #btn-deiso {
+      background: rgba(232,168,124,.15); border: 1px solid rgba(232,168,124,.4);
+      border-radius: 20px; color: var(--cor-acento); cursor: pointer;
+      font-size: .75rem; padding: .2rem .65rem; font-family: inherit;
+    }
+    #btn-deiso:hover { background: rgba(232,168,124,.28); }
+
+    /* loading */
+    #loading {
+      position: fixed; inset: 0; z-index: 900; background: #0d1b2a;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+      transition: opacity .4s;
+    }
+    #loading.hide { opacity: 0; pointer-events: none; }
+    .spin  { width: 48px; height: 48px; border: 3px solid rgba(74,158,222,.2); border-top-color: #4a9ede; border-radius: 50%; animation: sp .9s linear infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    #lbl   { font-size: .9rem; color: var(--cor-texto-suave); }
+    #lprog { font-size: .78rem; color: rgba(139,175,201,.55); min-height: 1.2em; }
+
+    /* fullscreen */
+    body.fs .nav-bar   { display: none; }
+    body.fs #canvas-wrap { top: 0; }
+    body.fs #sidebar   { top: 1rem; }
+    body.fs #ctrl      { top: 1rem; }
+    body.fs #banner    { top: 1rem; }
+
+    @media (max-width: 640px) { #sidebar { display: none; } }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <div id="lbl">Carregando modelos 3D…</div>
+  <div id="lprog"></div>
+</div>
+
+<nav class="nav-bar">
+  <a href="index.html" class="nav-logo"><img src="logo_saude_digital.png" alt="LabSD" style="height:28px;width:auto;opacity:.9"></a>
+  <div class="nav-links">
+    <a href="estudo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Atlas</span>
+    </a>
+    <a href="ar.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21h10"/></svg>
+      <span>AR</span>
+    </a>
+    <a href="quiz.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Quiz</span>
+    </a>
+    <a href="catalogo.html" class="nav-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Catálogo</span>
+    </a>
+  </div>
+</nav>
+
+<div id="banner">
+  <span>Visualizando: <span id="banner-nome"></span></span>
+  <button id="btn-deiso">← Todos</button>
+</div>
+
+<div id="sidebar"></div>
+
+<div id="ctrl">
+  <button class="btn btn-secundario" id="btn-reset">↺ Reset</button>
+  <button class="btn btn-secundario" id="btn-all">👁 Todos</button>
+  <button class="btn btn-secundario" id="btn-fs">⛶</button>
+</div>
+
+<div class="dica">
+  🖱 Esq: orbitar &nbsp; Meio/Shift: pan<br>
+  🔍 Scroll: zoom &nbsp; Duplo-clique: focar<br>
+  👆 Sidebar: isolar componente
+</div>
+
+<div id="canvas-wrap"></div>
+
+<div id="painel">
+  <div class="ph">
+    <div id="pnome"></div>
+    <button id="pclose">✕</button>
+  </div>
+  <p id="pdesc"></p>
+  <div class="ptags" id="ptags"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── DADOS ─────────────────────────────────────────────────────────────────────
+const MODELOS = {
+  celula: {
+    titulo: 'Célula',
+    comps: [
+      { id:'membrana',  nome:'Membrana Celular',           cor:'#88ccff', op:.18,
+        files:['models/celula/Membrana celular.stl'],
+        desc:'Bicamada fosfolipídica que envolve a célula, controlando a entrada e saída de substâncias e a comunicação celular.', pecas:1 },
+      { id:'citoplasma',nome:'Citoplasma',                 cor:'#7fa0b8', op:.14,
+        files:['models/celula/Citoplasma-inferior.stl.stl','models/celula/Citoplasma-lateral.stl.stl'],
+        desc:'Meio aquoso que preenche o interior da célula, suportando as organelas e as reações bioquímicas essenciais à vida celular.', pecas:1 },
+      { id:'nucleo',    nome:'Núcleo Celular',             cor:'#c4a882', op:.95,
+        files:['models/celula/Núcleo celular.stl'],
+        desc:'Centro de controle da célula. Contém o DNA organizado em cromossomos e coordena o crescimento, metabolismo e reprodução celular.', pecas:1 },
+      { id:'mito',      nome:'Mitocôndria',                cor:'#e8a87c', op:.95,
+        files:['models/celula/Mitocôndria.stl'],
+        desc:'Organela responsável pela produção de energia (ATP) por respiração celular. Possui membrana dupla e DNA próprio.', pecas:6 },
+      { id:'ret-rug',   nome:'Ret. Endoplasmático Rugoso', cor:'#b8cce4', op:.92,
+        files:['models/celula/Retículo endoplasmático rugoso 1.stl','models/celula/Retículo endoplasmático rugoso 2.stl','models/celula/Retículo endoplasmático rugoso 3.stl'],
+        desc:'Rede de membranas com ribossomos, responsável pela síntese e transporte de proteínas para secreção ou membrana celular.', pecas:3 },
+      { id:'ret-lis',   nome:'Ret. Endoplasmático Liso',   cor:'#a8d8a8', op:.92,
+        files:['models/celula/Retículo endoplasmático liso 1.stl','models/celula/Retículo endoplasmático liso 2.stl','models/celula/Retículo endoplasmático liso 3.stl','models/celula/Retículo endoplasmático liso 4.stl','models/celula/Retículo endoplasmático liso 5.stl'],
+        desc:'Rede de membranas sem ribossomos, envolvida na síntese de lipídios, metabolismo de carboidratos e detoxificação celular.', pecas:6 },
+      { id:'golgi',     nome:'Complexo de Golgi',          cor:'#f4b8c1', op:.95,
+        files:['models/celula/Complexo de Golgi 1.stl','models/celula/Complexo de Golgi 2.stl','models/celula/Complexo de Golgi 3.stl','models/celula/Complexo de Golgi 4.stl','models/celula/Complexo de Golgi 5.stl','models/celula/Complexo de Golgi 6.stl'],
+        desc:'Modifica, classifica e empacota proteínas e lipídios vindos do retículo endoplasmático para envio a seus destinos.', pecas:2 },
+      { id:'liso',      nome:'Lisossomo',                  cor:'#d4a5a5', op:.95,
+        files:['models/celula/Lisossomo 1.stl','models/celula/Lisossomo 2.stl','models/celula/Lisossomo 3.stl'],
+        desc:'Organela digestiva com enzimas hidrolíticas, responsável pela degradação de materiais intracelulares e reciclagem de componentes.', pecas:2 },
+    ],
+  },
+  dna: {
+    titulo: 'DNA',
+    comps: [
+      { id:'helice1', nome:'Alfa-hélice 1',  cor:'#4a9ede', op:.88,
+        files:['models/dna/Alfa-hélice 1.stl'],
+        desc:'Primeira fita da dupla-hélice. Representa a espiral característica que compacta o material genético no núcleo celular.', pecas:1 },
+      { id:'helice2', nome:'Alfa-hélice 2',  cor:'#2c6e9e', op:.88,
+        files:['models/dna/Alfa-hélice 2.stl'],
+        desc:'Segunda fita da dupla-hélice. As duas fitas correm antiparalelas, unidas por pontes de hidrogênio entre as bases nitrogenadas.', pecas:1 },
+      { id:'adenina', nome:'Adenina (A)',    cor:'#4caf87', op:.95,
+        files:['models/dna/Adenina.stl'],
+        desc:'Base nitrogenada púrica. Pareia com a Timina (A–T) por duas pontes de hidrogênio. Também compõe o ATP, molécula de energia celular.', pecas:5 },
+      { id:'citosina',nome:'Citosina (C)',   cor:'#f0c040', op:.95,
+        files:['models/dna/Citosina.stl'],
+        desc:'Base nitrogenada pirimídica. Pareia com a Guanina (C–G) por três pontes de hidrogênio, conferindo maior estabilidade à molécula.', pecas:5 },
+      { id:'guanina', nome:'Guanina (G)',    cor:'#e8a87c', op:.95,
+        files:['models/dna/Guanina.stl'],
+        desc:'Base nitrogenada púrica. Pareia com a Citosina (G–C) por três pontes de hidrogênio. O par G–C é o mais estável da dupla-hélice.', pecas:5 },
+      { id:'timina',  nome:'Timina (T)',     cor:'#e05252', op:.95,
+        files:['models/dna/Timina.stl'],
+        desc:'Base pirimídica exclusiva do DNA (no RNA é substituída pelo Uracil). Pareia com a Adenina (T–A) por duas pontes de hidrogênio.', pecas:5 },
+    ],
+  },
+};
+
+// ── PARSER STL BINÁRIO ────────────────────────────────────────────────────────
+function parseSTL(buf) {
+  const view = new DataView(buf);
+  const n    = view.getUint32(80, true);
+  const pos  = new Float32Array(n * 9);
+  const nor  = new Float32Array(n * 9);
+  let off = 84;
+  for (let i = 0; i < n; i++) {
+    const nx=view.getFloat32(off,true), ny=view.getFloat32(off+4,true), nz=view.getFloat32(off+8,true);
+    off += 12;
+    for (let v = 0; v < 3; v++) {
+      const b = i*9+v*3;
+      pos[b]  =view.getFloat32(off,  true);
+      pos[b+1]=view.getFloat32(off+4,true);
+      pos[b+2]=view.getFloat32(off+8,true);
+      nor[b]=nx; nor[b+1]=ny; nor[b+2]=nz;
+      off+=12;
+    }
+    off += 2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal',   new THREE.BufferAttribute(nor, 3));
+  return geo;
+}
+
+// ── BBOX de array de geometrias (coords brutas) ───────────────────────────────
+function bboxOfGeos(geos) {
+  let lx=Infinity,ly=Infinity,lz=Infinity,hx=-Infinity,hy=-Infinity,hz=-Infinity;
+  geos.forEach(geo => {
+    const a = geo.attributes.position.array;
+    for (let i=0;i<a.length;i+=3) {
+      if(a[i]  <lx)lx=a[i];   if(a[i]  >hx)hx=a[i];
+      if(a[i+1]<ly)ly=a[i+1]; if(a[i+1]>hy)hy=a[i+1];
+      if(a[i+2]<lz)lz=a[i+2]; if(a[i+2]>hz)hz=a[i+2];
+    }
+  });
+  return {lx,ly,lz,hx,hy,hz,
+    cx:(lx+hx)/2, cy:(ly+hy)/2, cz:(lz+hz)/2,
+    maxDim: Math.max(hx-lx, hy-ly, hz-lz, 0.001)};
+}
+
+// ── CENA THREE.JS ─────────────────────────────────────────────────────────────
+const wrap     = document.getElementById('canvas-wrap');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = false;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+wrap.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1b2a);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 2000);
+camera.position.set(0, 0, 6);
+
+// OrbitControls — orbit esq, pan meio/shift, zoom scroll
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping    = true;
+controls.dampingFactor    = 0.08;
+controls.rotateSpeed      = 0.7;
+controls.panSpeed         = 0.8;
+controls.zoomSpeed        = 1.2;
+controls.screenSpacePanning = true;   // pan no plano da tela (igual Blender)
+controls.minDistance      = 0.05;
+controls.maxDistance      = 500;
+
+// Luzes
+scene.add(new THREE.AmbientLight(0x445566, 1.6));
+const dir1 = new THREE.DirectionalLight(0xcce0ff, 2.2); dir1.position.set(4,6,5);   scene.add(dir1);
+const dir2 = new THREE.DirectionalLight(0xffddcc, 0.9); dir2.position.set(-4,2,-3); scene.add(dir2);
+const pt   = new THREE.PointLight(0x4a9ede, 0.7, 0);  pt.position.set(0,4,4);     scene.add(pt);
+
+// Grupo que contém todos os meshes
+const grupo = new THREE.Group();
+scene.add(grupo);
+
+// Resize
+function onResize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// Render loop
+(function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let modelo    = null;
+let meshMap   = {};   // id → [THREE.Mesh]
+let geoMap    = {};   // id → [THREE.BufferGeometry]  (coords brutas)
+let isoladoId = null;
+
+// Transformação global (toda a cena centrada)
+let globalTarget = new THREE.Vector3();
+let globalCamPos = new THREE.Vector3();
+
+// ── CARREGAMENTO ──────────────────────────────────────────────────────────────
+async function loadFile(comp) {
+  return Promise.all(comp.files.map(async file => {
+    const buf  = await fetch(file).then(r => r.arrayBuffer());
+    const geo  = parseSTL(buf);
+    geo.computeVertexNormals();
+
+    const mat  = new THREE.MeshStandardMaterial({
+      color:       new THREE.Color(comp.cor),
+      opacity:     comp.op,
+      transparent: comp.op < 1,
+      side:        THREE.DoubleSide,
+      roughness:   0.55,
+      metalness:   0.08,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    grupo.add(mesh);
+    meshMap[comp.id].push(mesh);
+    geoMap[comp.id].push(geo);
+  }));
+}
+
+// ── ENQUADRA câmera + target num bbox dado ────────────────────────────────────
+function frameTo(bb, instant = false) {
+  const target = new THREE.Vector3(bb.cx, bb.cy, bb.cz);
+  // distância para ver o objeto inteiro com FOV 45°
+  const dist   = bb.maxDim * 1.5;
+  const newPos = new THREE.Vector3(bb.cx, bb.cy, bb.cz + dist);
+
+  if (instant) {
+    controls.target.copy(target);
+    camera.position.copy(newPos);
+    controls.update();
+  } else {
+    // Animação suave de 400ms
+    const t0 = performance.now();
+    const fromTarget = controls.target.clone();
+    const fromPos    = camera.position.clone();
+    function animate(t) {
+      const p = Math.min((t - t0) / 400, 1);
+      const e = p < 0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2; // easeInOut
+      controls.target.lerpVectors(fromTarget, target, e);
+      camera.position.lerpVectors(fromPos, newPos, e);
+      controls.update();
+      if (p < 1) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+}
+
+// ── VISIBILIDADE / ISOLAMENTO ─────────────────────────────────────────────────
+function setAllVisible(v) {
+  modelo.comps.forEach(c => meshMap[c.id].forEach(m => { m.visible = v; }));
+}
+
+function isolate(id) {
+  if (isoladoId === id) { deIsolate(); return; }
+  isoladoId = id;
+
+  modelo.comps.forEach(c => {
+    const vis = c.id === id;
+    meshMap[c.id].forEach(m => { m.visible = vis; });
+    document.querySelector(`.chip[data-id="${c.id}"]`)?.classList.toggle('oculto',  !vis);
+    document.querySelector(`.chip[data-id="${c.id}"]`)?.classList.toggle('isolado',  vis);
+  });
+
+  // Enquadra câmera no bbox bruto deste componente
+  const bb = bboxOfGeos(geoMap[id]);
+  frameTo(bb);
+
+  document.getElementById('banner-nome').textContent = modelo.comps.find(c=>c.id===id)?.nome ?? '';
+  document.getElementById('banner').classList.add('show');
+  showPainel(id);
+}
+
+function deIsolate() {
+  isoladoId = null;
+  setAllVisible(true);
+  modelo.comps.forEach(c =>
+    document.querySelector(`.chip[data-id="${c.id}"]`)?.classList.remove('oculto','isolado')
+  );
+  // Volta ao enquadramento global
+  frameTo(bboxOfGeos(modelo.comps.flatMap(c => geoMap[c.id])));
+  document.getElementById('banner').classList.remove('show');
+  closePainel();
+}
+
+// ── PAINEL INFO ───────────────────────────────────────────────────────────────
+function showPainel(id) {
+  const c = modelo.comps.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('pnome').textContent = c.nome;
+  document.getElementById('pdesc').textContent = c.desc;
+  document.getElementById('ptags').innerHTML =
+    `<span class="ptag">🖨 ${c.pecas} peça${c.pecas>1?'s':''}</span>` +
+    `<span class="ptag">📄 ${c.files.length} STL</span>` +
+    `<span class="ptag" style="color:${c.cor}">● ${c.nome}</span>`;
+  document.getElementById('painel').classList.add('show');
+}
+function closePainel() { document.getElementById('painel').classList.remove('show'); }
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  modelo.comps.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className  = 'chip';
+    btn.dataset.id = c.id;
+    btn.innerHTML  = `<span class="chip-cor" style="background:${c.cor}"></span><span class="chip-nome">${c.nome}</span>`;
+    btn.addEventListener('click', () => isolate(c.id));
+    sb.appendChild(btn);
+  });
+}
+
+// ── FULLSCREEN ────────────────────────────────────────────────────────────────
+function setupFS() {
+  const btn = document.getElementById('btn-fs');
+  btn.addEventListener('click', () => {
+    const fs = document.body.classList.toggle('fs');
+    btn.textContent = fs ? '✕' : '⛶';
+    setTimeout(onResize, 50);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.body.classList.contains('fs')) {
+        document.body.classList.remove('fs');
+        document.getElementById('btn-fs').textContent = '⛶';
+        setTimeout(onResize, 50);
+      } else if (isoladoId) {
+        deIsolate();
+      }
+    }
+  });
+}
+
+// ── BOTÕES ────────────────────────────────────────────────────────────────────
+function setupBtns() {
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (isoladoId) {
+      frameTo(bboxOfGeos(geoMap[isoladoId]));
+    } else {
+      frameTo(bboxOfGeos(modelo.comps.flatMap(c => geoMap[c.id])));
+    }
+  });
+  document.getElementById('btn-all').addEventListener('click', deIsolate);
+  document.getElementById('btn-deiso').addEventListener('click', deIsolate);
+  document.getElementById('pclose').addEventListener('click', closePainel);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const param  = params.get('modelo') ?? 'celula';
+modelo = MODELOS[param] ?? MODELOS.celula;
+document.title = modelo.titulo + ' 3D · LabSD · Saúde Digital';
+modelo.comps.forEach(c => { meshMap[c.id] = []; geoMap[c.id] = []; });
+
+buildSidebar();
+setupFS();
+setupBtns();
+
+const progEl   = document.getElementById('lprog');
+const allFiles = modelo.comps.reduce((s,c) => s + c.files.length, 0);
+let   loaded   = 0;
+
+try {
+  await Promise.all(modelo.comps.map(comp =>
+    loadFile(comp).then(() => {
+      loaded += comp.files.length;
+      progEl.textContent = `${loaded} / ${allFiles} arquivos`;
+    })
+  ));
+} catch(err) {
+  document.getElementById('lbl').textContent = '⚠ Erro ao carregar: ' + err.message;
+  document.getElementById('lprog').textContent = err.stack ?? '';
+  console.error(err);
+  throw err;
+}
+
+// Enquadra toda a cena — sempre inicia com tudo visível
+const allGeos = modelo.comps.flatMap(c => geoMap[c.id]);
+frameTo(bboxOfGeos(allGeos), true);
+
+document.getElementById('loading').classList.add('hide');
+setTimeout(() => document.getElementById('loading')?.remove(), 450);
+</script>
+</body>
+</html>
